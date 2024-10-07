@@ -29,11 +29,12 @@ export default function NewTemplateDialog({
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [selectedTemplateData, setSelectedTemplateData] = useState<IFormCreateTemplate | null>(null);
   const [availableTemplates, setAvailableTemplates] = useState<TemplateDatum[]>([]);
+  const [isOpen, setIsOpen] = useState(false); // Estado del diálogo
 
-  // Limpiar la plantilla seleccionada cuando el formulario se cierra
   const handleDialogClose = () => {
     setSelectedTemplateId(null);
     setSelectedTemplateData(null);
+    setIsOpen(false); // Cierra el diálogo
   };
 
   const onSubmit = async (data: IFormCreateTemplate, reset: () => void) => {
@@ -46,9 +47,9 @@ export default function NewTemplateDialog({
 
       if (response) {
         toast.success(t('template_created'), { autoClose: 2000 });
-        reloadData();
+        reloadData();  // Recargar las plantillas
         reset();
-        handleDialogClose(); // Limpiar datos tras la creación
+        handleDialogClose();  // Cierra el diálogo después de crear
       }
     } catch (error: any) {
       toast.error(`Error: ${error.response?.data?.message || error.message}`);
@@ -65,8 +66,7 @@ export default function NewTemplateDialog({
     }
     try {
       const templateData = await getTemplatesById(templateId);
-      console.log("data", templateData);
-      const action = templateData.action; 
+      const action = templateData.action;
 
       const formattedTemplate: IFormCreateTemplate = {
         name: templateData.name,
@@ -98,7 +98,7 @@ export default function NewTemplateDialog({
 
   return (
     <div>
-      <Dialog onOpenChange={(isOpen) => !isOpen && handleDialogClose()}>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <button className='dark:text-dark-text-white flex items-center justify-center gap-3 rounded-lg bg-bg-primary px-4 py-3 text-sm text-text-secondary dark:bg-dark-primary'>
             <MdAddCircle className='h-5 w-5' />
