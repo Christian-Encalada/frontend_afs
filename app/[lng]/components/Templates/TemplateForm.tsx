@@ -11,10 +11,12 @@ export default function TemplateForm({
   onSubmit,
   defaultValues,
   lng,
+  isFormOpen,
 }: {
   onSubmit: (data: IFormCreateTemplate, resetForm: () => void) => void;
   defaultValues?: Partial<IFormCreateTemplate>;
   lng: string;
+  isFormOpen: boolean;  // Añadimos una propiedad para saber si el formulario está abierto o cerrado
 }) {
   const { t } = useTranslation(lng, 'templates');
   const [actions, setActions] = useState<{ id: number; name: string }[]>([]);
@@ -58,18 +60,9 @@ export default function TemplateForm({
     fetchActions();
   }, []);
 
-  // Update form when defaultValues change
+  // Resetear el formulario y las selecciones cuando el formulario se cierra o se vuelve a abrir
   useEffect(() => {
-    if (defaultValues) {
-      reset({
-        ...defaultValues,
-        action: defaultValues.action || undefined,
-      });
-      setContent(defaultValues.content || '');
-      setSelectedAction(defaultValues.action || undefined);
-      setSelectedStatus(defaultValues.status ?? true);
-      setSelectedActivate(defaultValues.activate ?? true);
-    } else {
+    if (!isFormOpen) {
       reset({
         name: '',
         content: '',
@@ -81,6 +74,20 @@ export default function TemplateForm({
       setSelectedAction(undefined);
       setSelectedStatus(true);
       setSelectedActivate(true);
+    }
+  }, [isFormOpen, reset]);
+
+  // Actualizar el formulario cuando los defaultValues cambian
+  useEffect(() => {
+    if (defaultValues) {
+      reset({
+        ...defaultValues,
+        action: defaultValues.action || undefined,
+      });
+      setContent(defaultValues.content || '');
+      setSelectedAction(defaultValues.action || undefined);
+      setSelectedStatus(defaultValues.status ?? true);
+      setSelectedActivate(defaultValues.activate ?? true);
     }
   }, [defaultValues, reset]);
 
@@ -97,6 +104,8 @@ export default function TemplateForm({
       },
       reset
     );
+    // Recargar la página después de crear el template
+    window.location.reload();
   });
 
   return (
