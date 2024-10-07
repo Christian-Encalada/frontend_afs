@@ -1,12 +1,12 @@
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
 import { getAllActions } from '../../services/actionService';
-import { getAllTemplateEnvs } from '../../services/templateEnvService';
 import RichTextEditor from './RichTextEditor';
 import { IFormCreateTemplate } from '@/types/forms';
 import { useTranslation } from '@/i18n/client';
 import SelectDropdown from './TemplateSelectDropdown';
 import { FIELDS_TEMPLATE } from '@/utils/constants';
+import { toast } from 'react-toastify';
 
 export default function TemplateForm({
   onSubmit,
@@ -19,10 +19,7 @@ export default function TemplateForm({
 }) {
   const { t } = useTranslation(lng, 'templates');
   const [actions, setActions] = useState<{ id: number; name: string }[]>([]);
-  const [variables, setVariables] = useState<{ id: number; name: string }[]>([]);
   const [templateEnvIds, setTemplateEnvIds] = useState<number[]>(defaultValues?.templateEnvIds || []);
-  
-  // Inicializamos los valores iniciales, incluyendo action
   const [selectedAction, setSelectedAction] = useState<number | undefined>(defaultValues?.action || undefined);
   const [content, setContent] = useState<string>(defaultValues?.content || '');
   const [selectedStatus, setSelectedStatus] = useState<boolean>(defaultValues?.status ?? true);
@@ -48,10 +45,9 @@ export default function TemplateForm({
     defaultValues,
   });
 
-  // Aquí vemos los valores que cambian en el campo action
   const watchedAction = watch('action', selectedAction);
 
-  // Función para obtener las acciones
+  // Fetch actions on mount
   useEffect(() => {
     const fetchActions = async () => {
       try {
@@ -61,26 +57,21 @@ export default function TemplateForm({
         console.error('Error fetching actions:', error);
       }
     };
-
     fetchActions();
   }, []);
 
-  // Lógica para manejar la actualización de los valores cuando cambian los defaultValues
+  // Update form when defaultValues change
   useEffect(() => {
     if (defaultValues) {
-      // Reseteamos los valores del formulario
       reset({
         ...defaultValues,
         action: defaultValues.action || undefined,
       });
-
-      // Actualizamos los estados locales
       setContent(defaultValues.content || '');
       setSelectedAction(defaultValues.action || undefined);
       setSelectedStatus(defaultValues.status ?? true);
       setSelectedActivate(defaultValues.activate ?? true);
     } else {
-      // Si no hay valores por defecto, inicializamos con valores vacíos
       reset({
         name: '',
         content: '',
@@ -97,11 +88,34 @@ export default function TemplateForm({
     }
   }, [defaultValues, reset]);
 
+  // Handle adding variable IDs
   const handleAddVariableId = (variableId: number) => {
     setTemplateEnvIds((prevIds) => [...prevIds, variableId]);
   };
 
+  // Function to extract variables from the content
+  const extractVariablesFromContent = (content: string): number[] => {
+    // Lógica para extraer los IDs de las variables del contenido
+    // Dependerá de la estructura específica de las variables en el editor de texto
+    return []; // Devuelve un array con los IDs de las variables extraídas del contenido
+  };
+
+  // Validación antes de enviar el formulario
   const onSubmitForm = handleSubmit((data) => {
+    // Extraer las variables del contenido
+    const contentVariables = extractVariablesFromContent(content);
+
+    // Validar si las variables extraídas del contenido coinciden con las variables del entorno (templateEnvIds)
+    const areVariablesValid = contentVariables.every((variableId) =>
+      templateEnvIds.includes(variableId)
+    );
+
+    if (!areVariablesValid) {
+      toast.error(t('error_variable_mismatch'));
+      return;
+    }
+
+    // Si todo es válido, enviar el formulario
     onSubmit(
       {
         ...data,
@@ -117,7 +131,7 @@ export default function TemplateForm({
 
   return (
     <form id="form" className="grid grid-cols-2 gap-6 p-6" onSubmit={onSubmitForm}>
-      {/* Primera fila: 'name' y 'action' */}
+      {/* Campos del formulario */}
       <div className="col-span-2 grid grid-cols-2 gap-4">
         {FIELDS_TEMPLATE.includes('name') && (
           <div>
@@ -139,15 +153,13 @@ export default function TemplateForm({
               register={register}
               lng={lng}
               placeholder={t('select_action')}
-              selectedValue={selectedAction ?? ''}  // Aseguramos que el valor seleccionado se refleje
-              onValueChange={(val: string | number) => setSelectedAction(Number(val))}  // Convertimos el valor seleccionado a número
+              selectedValue={selectedAction ?? ''}
+              onValueChange={(val: string | number) => setSelectedAction(Number(val))}
             />
             {errors.action && <p className="text-xs text-red-500 mt-2">{errors.action.message}</p>}
           </div>
         )}
       </div>
-
-      {/* Segunda fila: 'content' */}
       {FIELDS_TEMPLATE.includes('content') && (
         <div className="col-span-2">
           <label className="block mb-2">{t('content')}</label>
@@ -155,8 +167,6 @@ export default function TemplateForm({
           {errors.content && <p className="text-xs text-red-500 mt-2">{errors.content.message}</p>}
         </div>
       )}
-
-      {/* Tercera fila: 'status' y 'activate' */}
       <div className="col-span-2 grid grid-cols-2 gap-4">
         {FIELDS_TEMPLATE.includes('status') && (
           <div>
