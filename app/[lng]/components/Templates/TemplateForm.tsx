@@ -6,7 +6,6 @@ import { IFormCreateTemplate } from '@/types/forms';
 import { useTranslation } from '@/i18n/client';
 import SelectDropdown from './TemplateSelectDropdown';
 import { FIELDS_TEMPLATE } from '@/utils/constants';
-import { toast } from 'react-toastify';
 
 export default function TemplateForm({
   onSubmit,
@@ -19,7 +18,6 @@ export default function TemplateForm({
 }) {
   const { t } = useTranslation(lng, 'templates');
   const [actions, setActions] = useState<{ id: number; name: string }[]>([]);
-  const [templateEnvIds, setTemplateEnvIds] = useState<number[]>(defaultValues?.templateEnvIds || []);
   const [selectedAction, setSelectedAction] = useState<number | undefined>(defaultValues?.action || undefined);
   const [content, setContent] = useState<string>(defaultValues?.content || '');
   const [selectedStatus, setSelectedStatus] = useState<boolean>(defaultValues?.status ?? true);
@@ -76,7 +74,6 @@ export default function TemplateForm({
         name: '',
         content: '',
         action: undefined,
-        templateEnvIds: [],
         status: true,
         activate: true,
       });
@@ -84,44 +81,17 @@ export default function TemplateForm({
       setSelectedAction(undefined);
       setSelectedStatus(true);
       setSelectedActivate(true);
-      setTemplateEnvIds([]);
     }
   }, [defaultValues, reset]);
 
-  // Handle adding variable IDs
-  const handleAddVariableId = (variableId: number) => {
-    setTemplateEnvIds((prevIds) => [...prevIds, variableId]);
-  };
-
-  // Function to extract variables from the content
-  const extractVariablesFromContent = (content: string): number[] => {
-    // Lógica para extraer los IDs de las variables del contenido
-    // Dependerá de la estructura específica de las variables en el editor de texto
-    return []; // Devuelve un array con los IDs de las variables extraídas del contenido
-  };
-
   // Validación antes de enviar el formulario
   const onSubmitForm = handleSubmit((data) => {
-    // Extraer las variables del contenido
-    const contentVariables = extractVariablesFromContent(content);
-
-    // Validar si las variables extraídas del contenido coinciden con las variables del entorno (templateEnvIds)
-    const areVariablesValid = contentVariables.every((variableId) =>
-      templateEnvIds.includes(variableId)
-    );
-
-    if (!areVariablesValid) {
-      toast.error(t('error_variable_mismatch'));
-      return;
-    }
-
     // Si todo es válido, enviar el formulario
     onSubmit(
       {
         ...data,
         action: selectedAction !== undefined ? Number(selectedAction) : 0,
         content,
-        templateEnvIds,
         status: selectedStatus,
         activate: selectedActivate,
       },
@@ -163,7 +133,7 @@ export default function TemplateForm({
       {FIELDS_TEMPLATE.includes('content') && (
         <div className="col-span-2">
           <label className="block mb-2">{t('content')}</label>
-          <RichTextEditor value={content} onChange={setContent} addVariableToContent={handleAddVariableId} />
+          <RichTextEditor value={content} onChange={setContent} />
           {errors.content && <p className="text-xs text-red-500 mt-2">{errors.content.message}</p>}
         </div>
       )}
