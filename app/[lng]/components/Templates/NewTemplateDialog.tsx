@@ -30,6 +30,12 @@ export default function NewTemplateDialog({
   const [selectedTemplateData, setSelectedTemplateData] = useState<IFormCreateTemplate | null>(null);
   const [availableTemplates, setAvailableTemplates] = useState<TemplateDatum[]>([]);
 
+  // Limpiar la plantilla seleccionada cuando el formulario se cierra
+  const handleDialogClose = () => {
+    setSelectedTemplateId(null);
+    setSelectedTemplateData(null);
+  };
+
   const onSubmit = async (data: IFormCreateTemplate, reset: () => void) => {
     setLoading(true);
     try {
@@ -41,7 +47,8 @@ export default function NewTemplateDialog({
       if (response) {
         toast.success(t('template_created'), { autoClose: 2000 });
         reloadData();
-        reset(); // Llamamos a `reset` como una función para limpiar el formulario
+        reset();
+        handleDialogClose(); // Limpiar datos tras la creación
       }
     } catch (error: any) {
       toast.error(`Error: ${error.response?.data?.message || error.message}`);
@@ -52,19 +59,19 @@ export default function NewTemplateDialog({
 
   const handleSelectTemplate = async (templateId: number | null) => {
     if (!templateId) {
-      // Si no hay un template seleccionado (es decir, se selecciona "Seleccionar plantilla base"), limpiar el formulario
-      setSelectedTemplateData(null);  // Cambia a null para resetear el formulario
-      setSelectedTemplateId(null);  // Resetear también el ID seleccionado
+      setSelectedTemplateData(null);
+      setSelectedTemplateId(null);
       return;
     }
-  
-    // Si se selecciona una plantilla válida
     try {
       const templateData = await getTemplatesById(templateId);
+      console.log("data", templateData);
+      const action = templateData.action; 
+
       const formattedTemplate: IFormCreateTemplate = {
         name: templateData.name,
         content: templateData.content,
-        action: templateData.actionId,
+        action: action?.id,
         templateEnvIds: templateData.envIds ?? [],
         status: templateData.status,
         activate: templateData.activate,
@@ -75,7 +82,6 @@ export default function NewTemplateDialog({
       toast.error(`Error fetching template: ${(error as Error).message}`);
     }
   };
-  
 
   useEffect(() => {
     const fetchAvailableTemplates = async () => {
@@ -92,7 +98,7 @@ export default function NewTemplateDialog({
 
   return (
     <div>
-      <Dialog>
+      <Dialog onOpenChange={(isOpen) => !isOpen && handleDialogClose()}>
         <DialogTrigger asChild>
           <button className='dark:text-dark-text-white flex items-center justify-center gap-3 rounded-lg bg-bg-primary px-4 py-3 text-sm text-text-secondary dark:bg-dark-primary'>
             <MdAddCircle className='h-5 w-5' />
