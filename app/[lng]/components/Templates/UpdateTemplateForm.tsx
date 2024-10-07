@@ -81,10 +81,6 @@ export default function UpdateTemplateForm({
     fetchData();  // Llamamos a la función de carga
   }, [initialData, reset]);
 
-  const handleAddVariableId = (variableId: number) => {
-    setTemplateEnvIds((prevIds) => [...prevIds, variableId]);
-  };
-
   if (loading) {
     return <SkeletonForm rows={FIELDS_TEMPLATE.length} />;  // Mostrar el skeleton mientras se carga
   }
@@ -136,7 +132,7 @@ export default function UpdateTemplateForm({
       {FIELDS_TEMPLATE.includes('content') && (
         <div className="col-span-2">
           <label className="block mb-2">{t('content')}</label>
-          <RichTextEditor value={content} onChange={setContent} addVariableToContent={handleAddVariableId} />
+          <RichTextEditor value={content} onChange={setContent} />
           {errors.content && <p className="text-xs text-red-500 mt-2">{errors.content?.message}</p>}
         </div>
       )}
