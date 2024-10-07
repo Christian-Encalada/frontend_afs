@@ -59,20 +59,26 @@ export default function UpdateTemplateForm({
       }
     };
 
-    fetchActions();
-    setLoading(false);
-  }, []);
+    // Cargar las acciones y desactivar loading solo después de cargar todo
+    const fetchData = async () => {
+      setLoading(true);  // Mantenemos la carga activa hasta que tengamos todos los datos
+      await fetchActions();  // Cargar las acciones disponibles
 
-  // Cuando `initialData` cambia, reseteamos el formulario
-  useEffect(() => {
-    if (initialData) {
-      reset({
-        ...initialData,
-        action: initialData.action?.id,
-      });
-      setContent(initialData.content || ''); // Inicializamos el contenido
-      setSelectedAction(initialData.action?.id); // Inicializamos la acción
-    }
+      // Si los datos iniciales están disponibles, inicializamos los valores del formulario
+      if (initialData) {
+        reset({
+          ...initialData,
+          action: initialData.action?.id,
+        });
+        setContent(initialData.content || '');
+        setSelectedAction(initialData.action?.id);
+        setTemplateEnvIds(initialData.templateEnvIds || []);
+      }
+
+      setLoading(false);  // Cargar completada
+    };
+
+    fetchData();  // Llamamos a la función de carga
   }, [initialData, reset]);
 
   const handleAddVariableId = (variableId: number) => {
@@ -80,7 +86,7 @@ export default function UpdateTemplateForm({
   };
 
   if (loading) {
-    return <SkeletonForm rows={FIELDS_TEMPLATE.length} />;
+    return <SkeletonForm rows={FIELDS_TEMPLATE.length} />;  // Mostrar el skeleton mientras se carga
   }
 
   return (
@@ -90,8 +96,8 @@ export default function UpdateTemplateForm({
       onSubmit={handleSubmit((data) => {
         onSubmit({
           ...data,
-          action: selectedAction || 0, // Aseguramos que `action` sea un número
-          content, // Enviamos el contenido como string
+          action: selectedAction || 0,
+          content,
           templateEnvIds,
         });
       })}
@@ -119,7 +125,7 @@ export default function UpdateTemplateForm({
               lng={lng}
               placeholder={t('select_action')}
               selectedValue={selectedAction ?? ''}
-              onValueChange={(val: string | number) => setSelectedAction(Number(val))} // Convertimos el valor seleccionado a número
+              onValueChange={(val: string | number) => setSelectedAction(Number(val))}
             />
             {errors.action && <p className="text-xs text-red-500 mt-2">{errors.action?.message}</p>}
           </div>
